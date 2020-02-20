@@ -1,0 +1,29 @@
+{
+    "survey":[
+        {
+            "question":"Califique de 1 a 5 la información y orientación recibida en el primer contacto por el personal de nuestro call center:",
+            "answers":[ "5. EXCELENTE","4. BUENA","3. REGULAR","2. MALA","1. PESIMA" ]
+        },
+        {
+            "question":"Califique de 1 a 5 la gestión y agilidad de nuestras auxiliares de servicio al cliente en el momento de su ingreso a las instalaciones de AOA SAS",
+            "answers":[ "5. EXCELENTE","4. BUENA","3. REGULAR","2. MALA","1. PESIMA" ]
+        },
+        {
+            "question":"Califique de 1 a 5 la gestión y agilidad de nuestros auxiliares operativos en el momento de la entrega del vehículo:",
+            "answers":[ "5. EXCELENTE","4. BUENA","3. REGULAR","2. MALA","1. PESIMA" ]
+        },
+        {
+            "question":"De ser necesario ¿utilizaría nuevamente nuestros servicios?",
+            "answers":[ "DEFINITIVAMENTE SI" , "PROBABLEMENTE SI" , "NO LO UTILIZARÍA" ]
+        },
+        {
+            "question":"¿Recomendaría usted los servicios prestados por AOA S.A.S. a sus familiares o conocidos en caso de requerirlos?",
+            "answers":[ "SI" , "NO" ]
+        },
+        {
+            "question":"Califique de 1 a 5 en términos generales los servicios prestados por AOA S.A.S",
+            "answers":[ "5. EXCELENTE","4. BUENA","3. REGULAR","2. MALA","1. PESIMA" ]
+        }
+    ],
+    "version":"1"
+}
