@@ -1,4 +1,5 @@
 const surveys =  require('./jsons/encuesta.json')
+const act = require('./jsons/acta.json')
 
 const queries = require("./queries");
 const db = require("../config/database");
@@ -89,7 +90,8 @@ exports.authUser = async function (req, res, next) {
                 devolappointments,
                 deliverInfo,
                 devolInfo,
-                surveys
+                surveys,
+                act
             });
         }
         else{
