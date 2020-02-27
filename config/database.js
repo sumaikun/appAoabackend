@@ -31,8 +31,8 @@ exports.connection = {
 
                 //console.log("in connection-----------------")
                 
-                //const sql = conn.format(...queryArgs);
-                //console.log("sql",sql);
+                const sql = conn.format(...queryArgs);
+                console.log("sql",sql);
                 
                 var q = conn.query.apply(conn, queryArgs);
                 q.on('end', function () {                    
