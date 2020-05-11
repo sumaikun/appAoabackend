@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const properties = require("../properties");
 const moment = require('moment');
 
+const request = require('request');
 
 //funcion para ejecutar consultas a la base de datos, de esta manera se evita el uso del callback
 //y hay un mejor manejo de errores
@@ -41,75 +42,127 @@ exports.authUser = async function (req, res, next) {
 
     const threeDaysAhead =moment(new Date()).add(3,'d').format("YYYY-MM-DD")
 
-    try{
+    let options = {
+        url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
+        method: 'POST',
+        json: {
+            APIKEYAOAAPP: "yNPlsmOGgZoGmH$8",
+            see_tipo_evento: "true"        
+        }
+    }
+    
+    const eventTypesRequest = await new Promise(function (resolve, reject) {
+        request(options, function(error, response, body){
+            if(error) reject(null);
+            else resolve(body);
+        });
+    })
+
+    options = {
+        url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
+        method: 'POST',
+        json: {
+            APIKEYAOAAPP: "yNPlsmOGgZoGmH$8",
+            see_evento_actividad: "true"        
+        }
+    }
+
+    const activitiesTypesRequest = await new Promise(function (resolve, reject) {
+        request(options, function(error, response, body){
+            if(error) reject(null);
+            else resolve(body);
+        });
+    })
+
+    //console.log("eventTypes",eventTypes)
+
+    const eventTypes = eventTypesRequest ? eventTypesRequest.tabla_eventos : []
+
+    const activitiesTypes = activitiesTypesRequest ? activitiesTypesRequest.tabla_eventos_actividad : []
+    
+   try{
 
         let password = sha1(req.body.password);
         
-        let ifAdmin = await executeQuery(queries.admin_auth,[req.body.username,password]);        
-        
+        let ifAdmin = await executeQuery(queries.admin_auth,[req.body.username,password]);
+
+        let offices , user 
+
         if(ifAdmin.length > 0)
         {
             const token = jwt.sign({name:ifAdmin[0].nombre}, properties.appkey, {
                 expiresIn: "8h"
             });
 
-            let offices = await executeQuery(queries.get_actives_offices);
-            
-            let officesIndex = [];
+            offices = await executeQuery(queries.get_actives_offices);
 
-            offices.forEach( office => {
-                officesIndex.push(office.id)
-            });
-
-            let deliverAppointments = await executeQuery(queries.get_deliver_appointments_by_dates,[[officesIndex], threeDaysBefore , threeDaysAhead ]);
-
-            let devolappointments = await executeQuery(queries.get_devol_appointments_by_dates,[[officesIndex], threeDaysBefore , threeDaysAhead ]);
-
-            let deliverInfoIds = [];
-
-            deliverAppointments.forEach( deliver => {
-                deliverInfoIds.push(deliver.citaid)
-            })
-            
-            let devolInfoIds = [];
-
-            devolappointments.forEach( devol => {
-                devolInfoIds.push(devol.citaid)
-            })
-
-            //devolInfoIds = devolInfoIds.substring(0, devolInfoIds.length - 1);
-
-            let deliverInfo = deliverInfoIds.length > 0 ? await executeQuery(queries.get_siniester_info,[[deliverInfoIds]]) : [];          
-
-            let devolInfo = devolInfoIds.length > 0 ? await executeQuery(queries.get_siniester_info,[[devolInfoIds]]) : [];
-
-            res.send({
-                user:{isAdmin:true,id:ifAdmin[0].id,name:ifAdmin[0].nombre,email:ifAdmin[0].email,token},
-                offices,
-                deliverAppointments,
-                devolappointments,
-                deliverInfo,
-                devolInfo,
-                surveys,
-                act
-            });
+            user = {isAdmin:true,id:ifAdmin[0].id,name:ifAdmin[0].nombre,email:ifAdmin[0].email,token}
+          
         }
         else{
-            let ifUser = executeQuery(queries.user_auth,[req.body.username,password]);
+            let ifUser = await executeQuery(queries.user_auth,[req.body.username,password]);
             console.log(ifUser);
             
             if(ifUser.length > 0)
             {
-                const token = jwt.sign({name:ifAdmin[0].nombre}, properties.appkey, {
-                    expiresIn: 28800
+
+                offices = await executeQuery(queries.get_offices_by_branch,[ifUser[0].oficina]);            
+
+                const token = jwt.sign({name:ifUser[0].nombre}, properties.appkey, {
+                    expiresIn: '8h'
                 });
-                res.send({message:"a message",token});
+                
+                user = {isAdmin:false,id:ifUser[0].id,name:ifUser[0].nombre,email:ifUser[0].email,token}
+
             }
             else
             {
                 res.status(401).send();
+                return
             }   
-        } 
+        }
+        
+          
+        let officesIndex = [];
+
+        offices.forEach( office => {
+            officesIndex.push(office.id)
+        });
+
+        let deliverAppointments = await executeQuery(queries.get_deliver_appointments_by_dates,[[officesIndex], threeDaysBefore , threeDaysAhead ]);
+
+        let devolappointments = await executeQuery(queries.get_devol_appointments_by_dates,[[officesIndex], threeDaysBefore , threeDaysAhead ]);
+
+        let deliverInfoIds = [];
+
+        deliverAppointments.forEach( deliver => {
+            deliverInfoIds.push(deliver.citaid)
+        })
+        
+        let devolInfoIds = [];
+
+        devolappointments.forEach( devol => {
+            devolInfoIds.push(devol.citaid)
+        })
+
+        //devolInfoIds = devolInfoIds.substring(0, devolInfoIds.length - 1);
+
+        let deliverInfo = deliverInfoIds.length > 0 ? await executeQuery(queries.get_siniester_info,[[deliverInfoIds]]) : [];          
+
+        let devolInfo = devolInfoIds.length > 0 ? await executeQuery(queries.get_siniester_info,[[devolInfoIds]]) : [];
+
+        res.send({
+            user,
+            offices,
+            deliverAppointments,
+            devolappointments,
+            deliverInfo,
+            devolInfo,
+            surveys,
+            act,
+            eventTypes,
+            activitiesTypes
+        });
 
     }catch(err){
         next(err);
@@ -276,5 +329,59 @@ exports.getAppointmentsDevol = async function (req, res, next) {
         next(err);
     }
 
+}
+
+exports.createEvent = async function (req, res, next) {
+    
+    try{  
+        const ID_EVENTO_EMPLEADO = req.body.id 
+        const FECHA_EVENTO = req.body.eventDate
+        const ID_TIPO_EVENTO = req.body.eventType
+        const LOGITUD = req.body.longitude
+        const LATITUD = req.body.latitude
+        const DESCRIPCION = req.body.description
+        const EVENTO_ACTIVIDAD = req.body.activityType ? req.body.activityType : null
+        
+        if( ID_EVENTO_EMPLEADO == null || FECHA_EVENTO == null || ID_TIPO_EVENTO == null ||
+            LOGITUD == null || LATITUD == null || DESCRIPCION == null  ){
+            res.status(400).json({message: "Bad body"})
+            return
+        }
+
+        options = {
+            url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
+            method: 'POST',
+            json: {
+                APIKEYAOAAPP: "yNPlsmOGgZoGmH$8",
+                create_event: "true",
+                ID_EVENTO_EMPLEADO,
+                FECHA_EVENTO,
+                ID_TIPO_EVENTO,
+                LOGITUD,
+                LATITUD,
+                DESCRIPCION,
+                EVENTO_ACTIVIDAD
+            }
+        }
+
+        const createEventResponse = await new Promise(function (resolve, reject) {
+            request(options, function(error, response, body){
+                if(error) reject(null);
+                else resolve(body);
+            });
+        })
+
+        console.log("createEventResponse",createEventResponse)
+
+        if(createEventResponse.estado === 1)
+        {
+            res.send({message:"ok"});
+        }else{
+            res.status(400).send();
+        }
+
+    } catch(err){
+        next(err);
+    }
 }
 

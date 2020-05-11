@@ -11,6 +11,9 @@ module.exports = function(router) {
     //for filters
     router.get('/getAppointmentsDeliver/:office/:date', md.authenticated, appMethods.getAppointmentsDeliver);  
     router.get('/getAppointmentsDevol/:office/:date', md.authenticated, appMethods.getAppointmentsDevol);  
+
+    // Events services
+    router.post('/createEvent', md.authenticated, appMethods.createEvent);
 }
 
 
