@@ -342,8 +342,8 @@ exports.createEvent = async function (req, res, next) {
         const DESCRIPCION = req.body.description
         const EVENTO_ACTIVIDAD = req.body.activityType ? req.body.activityType : null
         
-        if( ID_EVENTO_EMPLEADO == null || FECHA_EVENTO == null || ID_TIPO_EVENTO == null ||
-            LOGITUD == null || LATITUD == null || DESCRIPCION == null  ){
+        if( !ID_EVENTO_EMPLEADO || !FECHA_EVENTO || !ID_TIPO_EVENTO ||
+            !LOGITUD || !LATITUD || !DESCRIPCION ){
             res.status(400).json({message: "Bad body"})
             return
         }
@@ -385,3 +385,79 @@ exports.createEvent = async function (req, res, next) {
     }
 }
 
+exports.pendingEvents = async function (req, res, next) {
+    try{  
+        const ID_OPERARIO = req.body.id 
+        
+        if( !ID_OPERARIO  ){
+            res.status(400).json({message: "Bad body"})
+            return
+        }
+
+        options = {
+            url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
+            method: 'POST',
+            json: {
+                APIKEYAOAAPP: "yNPlsmOGgZoGmH$8",
+                event_exercise: "true",
+                ID_OPERARIO
+            }
+        }
+
+        const pendingActivities = await new Promise(function (resolve, reject) {
+            request(options, function(error, response, body){
+                if(error) reject(null);
+                else resolve(body);
+            });
+        })
+
+        const pendingEvents = pendingActivities ? pendingActivities.evento_activo : []
+
+        
+        res.send({pendingEvents});
+       
+
+    } catch(err){
+        next(err);
+    }
+}
+
+exports.closeEvent = async function (req, res, next) {
+    
+    try{  
+       
+        const ID_EVENTO = req.body.id
+        const FECHA_FINAL_EVENTO = req.body.closeDate
+
+        options = {
+            url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
+            method: 'POST',
+            json: {
+                APIKEYAOAAPP: "yNPlsmOGgZoGmH$8",
+                update_date_end: "true",
+                ID_EVENTO,
+                FECHA_FINAL_EVENTO
+            }
+        }
+
+        const closeEventResponse = await new Promise(function (resolve, reject) {
+            request(options, function(error, response, body){
+                if(error) reject(null);
+                else resolve(body);
+            });
+        })
+
+        console.log("closeEventResponse",closeEventResponse)
+
+        if(closeEventResponse.estado === 1)
+        {
+            res.send({message:"ok"});
+        }else{
+            res.status(400).send();
+        }
+
+    } catch(err){
+        next(err);
+    }
+
+}

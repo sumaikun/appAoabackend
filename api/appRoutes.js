@@ -14,6 +14,8 @@ module.exports = function(router) {
 
     // Events services
     router.post('/createEvent', md.authenticated, appMethods.createEvent);
+    router.post('/pendingEvents', md.authenticated, appMethods.pendingEvents);
+    router.post('/closeEvent', md.authenticated, appMethods.closeEvent);
 }
 
 
