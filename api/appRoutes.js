@@ -16,6 +16,10 @@ module.exports = function(router) {
     router.post('/createEvent', md.authenticated, appMethods.createEvent);
     router.post('/pendingEvents', md.authenticated, appMethods.pendingEvents);
     router.post('/closeEvent', md.authenticated, appMethods.closeEvent);
+
+    //Testing images
+    router.post('/testingImage', appMethods.testingImage);
+    router.post('/testingImage2', appMethods.testingImage2);
 }
 
 

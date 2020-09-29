@@ -11,6 +11,8 @@ const moment = require('moment');
 
 const request = require('request');
 
+const Jimp = require('jimp')
+
 //funcion para ejecutar consultas a la base de datos, de esta manera se evita el uso del callback
 //y hay un mejor manejo de errores
 function executeQuery(query, ...args) {
@@ -35,6 +37,7 @@ function executeQuery(query, ...args) {
 
 exports.authUser = async function (req, res, next) {
 
+    console.log("trying to auth",req)
 
     //const today = moment(new Date()).format("YYYY-MM-DD")
 
@@ -459,5 +462,70 @@ exports.closeEvent = async function (req, res, next) {
     } catch(err){
         next(err);
     }
+
+}
+
+
+
+exports.testingImage = async function (req, res, next) {
+
+    try{  
+
+        let image = new Jimp(650, 50, 'white', (err, image) => {
+        if (err) throw err
+        })
+
+        let message = 'Entrega tomada: 2020-09-14 09:01:51 Cargada: 2020-09-14 09:04:32 AM Placa: FVQ202 Siniestro: 93755201'
+        let x = 10
+        let y = 10
+
+        Jimp.loadFont(Jimp.FONT_SANS_12_BLACK)
+        .then(font => {
+            image.print(font, x, y, message)
+            return image            
+        }).then( async image => {
+            let file = `testing.${image.getExtension()}`
+            console.log("file",__dirname+"/"+file)
+            image.write(__dirname+"/files/"+file)
+            try{
+               // save            
+                res.sendFile(__dirname+"/files/"+file);
+            }catch(err){
+                console.log("err",err)
+                next(err);
+            }
+            
+            //res.send({message:"ok"});
+        })
+
+        //res.send({message:"ok"});
+
+    }catch(err){
+        next(err);
+    }
+ 
+        
+}
+
+exports.testingImage2 = async function (req, res, next) { 
+
+    var images = ['./files/cartest.jpg', './files/testing.png'];
+
+    var jimps = [];
+
+    for (var i = 0; i < images.length; i++) {
+        jimps.push(Jimp.read(images[i]));
+    }
+
+    Promise.all(jimps).then(function(data) {
+        return Promise.all(jimps);
+    }).then(function(data) {
+        data[0].composite(data[1],0,0);        
+
+        data[0].write('./files/test.png', function() {
+            console.log("wrote the image");
+            res.send({message:"ok"});
+        });
+    });
 
 }
