@@ -37,7 +37,7 @@ function executeQuery(query, ...args) {
 
 exports.authUser = async function (req, res, next) {
 
-    console.log("trying to auth",req)
+    //console.log("trying to auth",req)
 
     //const today = moment(new Date()).format("YYYY-MM-DD")
 
@@ -520,7 +520,8 @@ exports.testingImage2 = async function (req, res, next) {
     Promise.all(jimps).then(function(data) {
         return Promise.all(jimps);
     }).then(function(data) {
-        data[0].composite(data[1],0,0);        
+        data[0].composite(data[1],0,0);  
+        data[0].composite(data[1],0,30);        
 
         data[0].write('./files/test.png', function() {
             console.log("wrote the image");
@@ -528,4 +529,76 @@ exports.testingImage2 = async function (req, res, next) {
         });
     });
 
+}
+
+exports.proccessDeliverAppointment = async function (req, res, next) { 
+
+    try{  
+
+        const { image, appointment } = req.body
+
+        var fs = require("fs");
+        var bitmap = new Buffer(image, 'base64');
+        const dir = __dirname+"/files/app/"+appointment
+        
+        if (!fs.existsSync(dir)){
+            fs.mkdirSync(dir);
+        }
+
+        fs.writeFileSync(dir+"/test2.jpeg", bitmap);
+
+        const labelGenerated = await generateImageLabel(dir)
+
+        console.log("labelGenerated",labelGenerated)
+
+        res.send({message:"ok"});
+
+    }catch(err){
+        next(err);
+    }    
+
+}
+
+exports.proccessDevolutionAppointment = async function (req, res, next) { 
+
+}
+
+async function generateImageLabel(dir){
+
+        return new Promise(
+            function(resolve, reject) {
+
+                try{
+
+                    let image = new Jimp(650, 50, 'white', (err, image) => {
+                        if (err) throw err
+                    })
+            
+                    let message = 'Entrega tomada: 2020-09-14 09:01:51 Cargada: 2020-09-14 09:04:32 AM Placa: FVQ202 Siniestro: 93755201'
+                    let x = 10
+                    let y = 10
+            
+                    Jimp.loadFont(Jimp.FONT_SANS_12_BLACK)
+                    .then(font => {
+                        image.print(font, x, y, message)
+                        return image            
+                    }).then( async image => {
+                        try{
+                            let file = `/label.${image.getExtension()}`
+                            console.log("file",dir+file)
+                            image.write(dir+file,error => console.error("error label:",error))                                             
+                            resolve(true)                           
+                        }catch(err){
+                            console.log("err",err)
+                            reject(false)
+                        }
+                    })
+
+                }catch(err){
+                    console.log("err",err)
+                    reject(false)
+                }            
+
+            }
+        )        
 }

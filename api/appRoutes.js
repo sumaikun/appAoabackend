@@ -18,6 +18,10 @@ module.exports = function(router) {
     router.post('/closeEvent', md.authenticated, appMethods.closeEvent);
 
     //Testing images
+    router.post('/proccessDeliverAppointment', appMethods.proccessDeliverAppointment);
+    router.post('/proccessDevolutionAppointment', appMethods.proccessDevolutionAppointment);
+
+    //Testing images
     router.post('/testingImage', appMethods.testingImage);
     router.post('/testingImage2', appMethods.testingImage2);
 }
