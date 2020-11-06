@@ -531,25 +531,84 @@ exports.testingImage2 = async function (req, res, next) {
 
 }
 
-exports.proccessDeliverAppointment = async function (req, res, next) { 
+exports.proccessAppointment = async function (req, res, next) { 
 
-    try{  
+    //It can happened that was already proccessed
 
-        const { image, appointment } = req.body
+    try{
+        const { appointment, type, frontImageSrc,
+            leftImageSrc, rightImageSrc, backImageSrc,
+            odometerImageSrc, contractImageSrc,
+            checkImageSrc, inventoryImageSrc, pictureTimes
+        } = req.body
 
-        var fs = require("fs");
-        var bitmap = new Buffer(image, 'base64');
-        const dir = __dirname+"/files/app/"+appointment
+        const fs = require("fs");
+        const dir = __dirname+"/files/app/"+type+"/"+appointment
         
-        if (!fs.existsSync(dir)){
-            fs.mkdirSync(dir);
+        if (!fs.existsSync(dir)){        
+           await fs.mkdirSync(dir);
         }
 
-        fs.writeFileSync(dir+"/test2.jpeg", bitmap);
+        if(frontImageSrc)
+        {
+            const frontImageSrcBitmap = new Buffer(frontImageSrc, 'base64');
 
-        const labelGenerated = await generateImageLabel(dir)
+            fs.writeFileSync(dir+"/frontImage.jpeg", frontImageSrcBitmap);
 
-        console.log("labelGenerated",labelGenerated)
+            /*let message = 'Entrega tomada: 2020-09-14 09:01:51 Cargada: 2020-09-14 09:04:32 AM Placa: FVQ202 Siniestro: 93755201'
+
+            const labelGenerated = await generateImageLabel(dir,message)
+    
+            console.log("labelGenerated",labelGenerated)
+    
+            await mergeImages([dir+"/test2.jpeg",dir+"/label.png"],dir)*/
+        }
+
+        if(leftImageSrc)
+        {
+            const leftImageSrcBitmap = new Buffer(leftImageSrc, 'base64');
+            fs.writeFileSync(dir+"/leftImage.jpeg", leftImageSrcBitmap);
+        }
+
+        if(rightImageSrc)
+        {
+            const rightImageSrcBitmap = new Buffer(rightImageSrc, 'base64');
+            fs.writeFileSync(dir+"/rightImage.jpeg", rightImageSrcBitmap);
+        }
+
+        if(backImageSrc)
+        {
+            const backImageSrcBitmap = new Buffer(backImageSrc, 'base64');
+            fs.writeFileSync(dir+"/backImage.jpeg", backImageSrcBitmap);
+        }
+
+        
+        if(odometerImageSrc)
+        {
+            const odometerImageSrcBitmap = new Buffer(odometerImageSrc, 'base64');
+            fs.writeFileSync(dir+"/odometerImage.jpeg", odometerImageSrcBitmap);
+        }
+
+        if(contractImageSrc)
+        {
+            const contractImageSrcBitmap = new Buffer(contractImageSrc, 'base64');
+            fs.writeFileSync(dir+"/contractImage.jpeg", contractImageSrcBitmap);
+        }
+        
+        if(checkImageSrc)
+        {
+            const checkImageSrcBitmap = new Buffer(checkImageSrc, 'base64');
+            fs.writeFileSync(dir+"/contractImage.jpeg", checkImageSrcBitmap);
+        }
+        
+
+        if(inventoryImageSrc)
+        {
+            const inventoryImageSrcBitmap = new Buffer(inventoryImageSrc, 'base64');
+            fs.writeFileSync(dir+"/contractImage.jpeg", inventoryImageSrcBitmap);
+        }      
+
+      
 
         res.send({message:"ok"});
 
@@ -559,11 +618,7 @@ exports.proccessDeliverAppointment = async function (req, res, next) {
 
 }
 
-exports.proccessDevolutionAppointment = async function (req, res, next) { 
-
-}
-
-async function generateImageLabel(dir){
+async function generateImageLabel(dir,message){
 
         return new Promise(
             function(resolve, reject) {
@@ -572,9 +627,8 @@ async function generateImageLabel(dir){
 
                     let image = new Jimp(650, 50, 'white', (err, image) => {
                         if (err) throw err
-                    })
-            
-                    let message = 'Entrega tomada: 2020-09-14 09:01:51 Cargada: 2020-09-14 09:04:32 AM Placa: FVQ202 Siniestro: 93755201'
+                    })            
+                    
                     let x = 10
                     let y = 10
             
@@ -601,4 +655,34 @@ async function generateImageLabel(dir){
 
             }
         )        
+}
+
+async function mergeImages(images,dir) { 
+
+    return new Promise(
+
+        function(resolve,reject) {
+            var jimps = [];
+
+            for (var i = 0; i < images.length; i++) {
+                jimps.push(Jimp.read(images[i]));
+            }
+
+            Promise.all(jimps).then(function(data) {
+                return Promise.all(jimps);
+            }).then(function(data) {
+                data[0].composite(data[1],0,0);  
+                //data[0].composite(data[1],0,30);        
+                let file = `/merge.png`
+                data[0].write(dir+file, function() {
+                    console.log("wrote merge image");
+                    resolve(true) 
+                });
+            }).catch(function(error){
+                console.error("mergin error",error)
+                reject(false)
+            });
+        }
+    )
+
 }
