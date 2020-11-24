@@ -13,6 +13,8 @@ const request = require('request');
 
 const Jimp = require('jimp')
 
+const sizeOf = require('image-size');
+
 //funcion para ejecutar consultas a la base de datos, de esta manera se evita el uso del callback
 //y hay un mejor manejo de errores
 function executeQuery(query, ...args) {
@@ -450,7 +452,7 @@ exports.closeEvent = async function (req, res, next) {
             });
         })
 
-        console.log("closeEventResponse",closeEventResponse)
+        //console.log("closeEventResponse",closeEventResponse)
 
         if(closeEventResponse.estado === 1)
         {
@@ -533,6 +535,8 @@ exports.testingImage2 = async function (req, res, next) {
 
 exports.proccessAppointment = async function (req, res, next) { 
 
+    console.log("proccess appointment got it")
+
     //It can happened that was already proccessed
 
     try{
@@ -541,6 +545,22 @@ exports.proccessAppointment = async function (req, res, next) {
             odometerImageSrc, contractImageSrc,
             checkImageSrc, inventoryImageSrc, pictureTimes
         } = req.body
+
+        let appointmentResult = await executeQuery(queries.get_appointment_info,[appointment]);
+
+        if(!appointmentResult[0])
+        {
+            res.status(400).send({"message":"siniester not exist for appointment "+appointment});
+            return
+        }
+
+        const siniester = appointmentResult[0].siniestro;
+
+        const plate = appointmentResult[0].placa;
+
+        const spanishType = type === "deliver" ? "Entrega" : "Devolucion";
+        
+        const now = moment().format("YYYY-MM-DD HH:mm:ss")
 
         const fs = require("fs");
         const dir = __dirname+"/files/app/"+type+"/"+appointment
@@ -555,31 +575,77 @@ exports.proccessAppointment = async function (req, res, next) {
 
             fs.writeFileSync(dir+"/frontImage.jpeg", frontImageSrcBitmap);
 
-            /*let message = 'Entrega tomada: 2020-09-14 09:01:51 Cargada: 2020-09-14 09:04:32 AM Placa: FVQ202 Siniestro: 93755201'
+            await sleep(100)
 
-            const labelGenerated = await generateImageLabel(dir,message)
+            const dimensions = sizeOf(dir+"/frontImage.jpeg");
+
+            //pictureTimes.frontCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+
+            let message =  `${spanishType} tomada: ${pictureTimes.frontCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"frontImageLabel",dimensions.width, 50)
+
+            await sleep(400)
     
-            console.log("labelGenerated",labelGenerated)
-    
-            await mergeImages([dir+"/test2.jpeg",dir+"/label.png"],dir)*/
+            await mergeImages([dir+"/frontImage.jpeg",dir+"/frontImageLabel.png"],dir,"frontImageLabeled")
         }
 
         if(leftImageSrc)
         {
             const leftImageSrcBitmap = new Buffer(leftImageSrc, 'base64');
+
             fs.writeFileSync(dir+"/leftImage.jpeg", leftImageSrcBitmap);
+
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/leftImage.jpeg");
+            
+            //pictureTimes.leftCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+            let message =  `${spanishType} tomada: ${pictureTimes.frontCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"leftImageLabel",dimensions.width, 50)
+
+            await sleep(400)
+    
+            await mergeImages([dir+"/leftImage.jpeg",dir+"/leftImageLabel.png"],dir,"leftImageLabeled")
         }
 
         if(rightImageSrc)
         {
             const rightImageSrcBitmap = new Buffer(rightImageSrc, 'base64');
             fs.writeFileSync(dir+"/rightImage.jpeg", rightImageSrcBitmap);
+
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/rightImage.jpeg");
+
+            //pictureTimes.rightCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+            let message =  `${spanishType} tomada: ${pictureTimes.rightCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"rightImageLabel",dimensions.width, 50)
+
+            await sleep(400)
+    
+            await mergeImages([dir+"/rightImage.jpeg",dir+"/rightImageLabel.png"],dir,"rightImageLabeled")
         }
 
         if(backImageSrc)
         {
             const backImageSrcBitmap = new Buffer(backImageSrc, 'base64');
             fs.writeFileSync(dir+"/backImage.jpeg", backImageSrcBitmap);
+
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/backImage.jpeg");
+
+            //pictureTimes.backCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+            let message =  `${spanishType} tomada: ${pictureTimes.backCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"backImageLabel",dimensions.width, 50)
+
+            await sleep(500)
+    
+            await mergeImages([dir+"/backImage.jpeg",dir+"/backImageLabel.png"],dir,"backImageLabeled")
         }
 
         
@@ -587,28 +653,74 @@ exports.proccessAppointment = async function (req, res, next) {
         {
             const odometerImageSrcBitmap = new Buffer(odometerImageSrc, 'base64');
             fs.writeFileSync(dir+"/odometerImage.jpeg", odometerImageSrcBitmap);
+
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/odometerImage.jpeg");
+            //pictureTimes.odometerCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+            let message =  `${spanishType} tomada: ${pictureTimes.odometerCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"odometerImageLabel",dimensions.width, 50)
+
+            await sleep(400)
+    
+            await mergeImages([dir+"/odometerImage.jpeg",dir+"/odometerImageLabel.png"],dir,"odometerImageLabeled")
         }
 
         if(contractImageSrc)
         {
             const contractImageSrcBitmap = new Buffer(contractImageSrc, 'base64');
             fs.writeFileSync(dir+"/contractImage.jpeg", contractImageSrcBitmap);
+
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/contractImage.jpeg");
+            //pictureTimes.contractImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+            let message =  `${spanishType} tomada: ${pictureTimes.contractImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"contractImageLabel",dimensions.width, 50)
+
+            await sleep(400)
+    
+            await mergeImages([dir+"/contractImage.jpeg",dir+"/contractImageLabel.png"],dir,"contractImageLabeled")
         }
         
         if(checkImageSrc)
         {
             const checkImageSrcBitmap = new Buffer(checkImageSrc, 'base64');
-            fs.writeFileSync(dir+"/contractImage.jpeg", checkImageSrcBitmap);
+            fs.writeFileSync(dir+"/checkImage.jpeg", checkImageSrcBitmap);
+
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/checkImage.jpeg");
+            //pictureTimes.checkCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+            let message =  `${spanishType} tomada: ${pictureTimes.checkCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"checkImageLabel",dimensions.width, 50)
+
+            await sleep(500)
+    
+            await mergeImages([dir+"/checkImage.jpeg",dir+"/checkImageLabel.png"],dir,"checkImageLabeled")
         }
         
 
         if(inventoryImageSrc)
         {
             const inventoryImageSrcBitmap = new Buffer(inventoryImageSrc, 'base64');
-            fs.writeFileSync(dir+"/contractImage.jpeg", inventoryImageSrcBitmap);
-        }      
+            fs.writeFileSync(dir+"/inventoryImage.jpeg", inventoryImageSrcBitmap);
 
-      
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/inventoryImage.jpeg");
+
+            let message =  `${spanishType} tomada: ${pictureTimes.inventoryCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"inventoryImageLabel",dimensions.width, 50)
+
+            await sleep(500)
+    
+            await mergeImages([dir+"/inventoryImage.jpeg",dir+"/inventoryImageLabel.png"],dir,"inventoryImageLabeled")
+        }      
 
         res.send({message:"ok"});
 
@@ -618,14 +730,14 @@ exports.proccessAppointment = async function (req, res, next) {
 
 }
 
-async function generateImageLabel(dir,message){
+async function generateImageLabel(dir,message,name,width,height){
 
         return new Promise(
             function(resolve, reject) {
 
                 try{
 
-                    let image = new Jimp(650, 50, 'white', (err, image) => {
+                    let image = new Jimp(width, height, 'white', (err, image) => {
                         if (err) throw err
                     })            
                     
@@ -638,7 +750,7 @@ async function generateImageLabel(dir,message){
                         return image            
                     }).then( async image => {
                         try{
-                            let file = `/label.${image.getExtension()}`
+                            let file = `/${name}.${image.getExtension()}`
                             console.log("file",dir+file)
                             image.write(dir+file,error => console.error("error label:",error))                                             
                             resolve(true)                           
@@ -657,7 +769,7 @@ async function generateImageLabel(dir,message){
         )        
 }
 
-async function mergeImages(images,dir) { 
+async function mergeImages(images,dir,name) { 
 
     return new Promise(
 
@@ -673,7 +785,7 @@ async function mergeImages(images,dir) {
             }).then(function(data) {
                 data[0].composite(data[1],0,0);  
                 //data[0].composite(data[1],0,30);        
-                let file = `/merge.png`
+                let file = `/${name}.png`
                 data[0].write(dir+file, function() {
                     console.log("wrote merge image");
                     resolve(true) 
@@ -685,4 +797,8 @@ async function mergeImages(images,dir) {
         }
     )
 
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }

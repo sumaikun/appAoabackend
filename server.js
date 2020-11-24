@@ -3,11 +3,22 @@ var bodyParser = require('body-parser');
 var properties = require("./properties");
 var appRoutes = require("./api/appRoutes");
 var app = express();
-var bodyParserJSON = bodyParser.json();
+var bodyParserJSON = bodyParser.json({limit: '5mb'});
 var bodyParserURLEncoded = bodyParser.urlencoded({extended:true});
+var timeout = require('connect-timeout');
 
 var router = express.Router();
 
+var redis = require("redis");
+var client = redis.createClient();
+
+client.on("connect", function() {
+  console.log("You are now connected");
+});
+
+client.set("student", "Laylaa");
+
+app.use(timeout('100s'));
 app.use(bodyParserJSON);
 app.use(bodyParserURLEncoded);
 
@@ -43,4 +54,7 @@ app.listen(properties.API_PORT, (req, res) => {
   console.log(`Server is running on ${properties.API_PORT} port.`);  
 })
 
+client.get('student', function(err, reply) {
+  console.log("reply",reply);
+})
 
