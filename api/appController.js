@@ -1,6 +1,5 @@
 const surveys =  require('./jsons/encuesta.json')
 const act = require('./jsons/acta.json')
-
 const queries = require("./queries");
 const db = require("../config/database");
 const sha1 = require('js-sha1');
@@ -8,13 +7,21 @@ const sha1 = require('js-sha1');
 const jwt = require('jsonwebtoken');
 const properties = require("../properties");
 const moment = require('moment');
-
 const request = require('request');
-
 const Jimp = require('jimp')
-
 const sizeOf = require('image-size');
+const fs = require('fs');
+const redis = require("redis");
+const client = redis.createClient();
+var readWriteClient = redis.createClient();
 
+client.config('set','notify-keyspace-events','KEA');
+
+client.subscribe('__keyevent@0__:set');
+
+client.on("connect", function() {
+    console.log("You are now connected to redis");
+});
 //funcion para ejecutar consultas a la base de datos, de esta manera se evita el uso del callback
 //y hay un mejor manejo de errores
 function executeQuery(query, ...args) {
@@ -487,7 +494,7 @@ exports.testingImage = async function (req, res, next) {
             return image            
         }).then( async image => {
             let file = `testing.${image.getExtension()}`
-            console.log("file",__dirname+"/"+file)
+            //console.log("file",__dirname+"/"+file)
             image.write(__dirname+"/files/"+file)
             try{
                // save            
@@ -588,6 +595,12 @@ exports.proccessAppointment = async function (req, res, next) {
             await sleep(400)
     
             await mergeImages([dir+"/frontImage.jpeg",dir+"/frontImageLabel.png"],dir,"frontImageLabeled")
+
+            //await sleep(100)
+
+            //const base64str = base64_encode(dir+"/frontImageLabeled.png");
+
+            //console.log("base64str",base64str)
         }
 
         if(leftImageSrc)
@@ -643,7 +656,7 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await generateImageLabel(dir,message,"backImageLabel",dimensions.width, 50)
 
-            await sleep(500)
+            await sleep(400)
     
             await mergeImages([dir+"/backImage.jpeg",dir+"/backImageLabel.png"],dir,"backImageLabeled")
         }
@@ -698,7 +711,7 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await generateImageLabel(dir,message,"checkImageLabel",dimensions.width, 50)
 
-            await sleep(500)
+            await sleep(400)
     
             await mergeImages([dir+"/checkImage.jpeg",dir+"/checkImageLabel.png"],dir,"checkImageLabeled")
         }
@@ -717,10 +730,12 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await generateImageLabel(dir,message,"inventoryImageLabel",dimensions.width, 50)
 
-            await sleep(500)
+            await sleep(400)
     
             await mergeImages([dir+"/inventoryImage.jpeg",dir+"/inventoryImageLabel.png"],dir,"inventoryImageLabeled")
-        }      
+        }
+        
+        readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment }))
 
         res.send({message:"ok"});
 
@@ -802,3 +817,45 @@ async function mergeImages(images,dir,name) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+function base64_encode(file) {
+    // read binary data
+    var bitmap = fs.readFileSync(file);
+    // convert binary data to base64 encoded string
+    return new Buffer(bitmap).toString('base64');
+}
+
+
+// redis example
+
+/*client.set("student", "Laylaa");
+
+client.get('student', function(err, reply) {
+    console.log("reply",reply);
+})*/
+
+client.on('message', function(channel, key) {
+    // do what you want when a value is updated
+    console.log("channel",channel,"key",key)
+    switch (key) {
+        case "proccessImagesAppointment":
+            readWriteClient.get(key, function(err, value) {
+                console.log("proccessImagesAppointment",value);
+
+                const objectVlue = JSON.parse(value)
+
+                const { type, appointment } = objectVlue 
+
+                const dir = __dirname+"/files/app/"+type+"/"+appointment
+                const base64str = base64_encode(dir+"/frontImageLabeled.png");
+                console.log("base64str",base64str)
+             });
+            break        
+        default:
+            break
+    }
+});
+
+/*client.on('proccessAppointmentsImages', function(err, reply) {
+    console.log("reply",reply);
+})*/

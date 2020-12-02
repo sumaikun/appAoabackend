@@ -9,14 +9,6 @@ var timeout = require('connect-timeout');
 
 var router = express.Router();
 
-var redis = require("redis");
-var client = redis.createClient();
-
-client.on("connect", function() {
-  console.log("You are now connected");
-});
-
-client.set("student", "Laylaa");
 
 app.use(timeout('100s'));
 app.use(bodyParserJSON);
@@ -54,7 +46,5 @@ app.listen(properties.API_PORT, (req, res) => {
   console.log(`Server is running on ${properties.API_PORT} port.`);  
 })
 
-client.get('student', function(err, reply) {
-  console.log("reply",reply);
-})
+
 
