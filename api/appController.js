@@ -159,9 +159,15 @@ exports.authUser = async function (req, res, next) {
 
         //devolInfoIds = devolInfoIds.substring(0, devolInfoIds.length - 1);
 
-        let deliverInfo = deliverInfoIds.length > 0 ? await executeQuery(queries.get_siniester_info,[[deliverInfoIds]]) : [];          
+        const deliverInfo = deliverInfoIds.length > 0 ? await executeQuery(queries.get_siniester_info,[[deliverInfoIds]]) : [];          
 
-        let devolInfo = devolInfoIds.length > 0 ? await executeQuery(queries.get_siniester_info,[[devolInfoIds]]) : [];
+        const devolInfo = devolInfoIds.length > 0 ? await executeQuery(queries.get_siniester_info,[[devolInfoIds]]) : [];
+
+        const devolutionStates = [
+            { id:2, name:"Parqueadero" },
+            { id:8, name:"Alistamiento" },
+            { id:106, name:"Siniestro app" }
+        ]
 
         res.send({
             user,
@@ -173,7 +179,8 @@ exports.authUser = async function (req, res, next) {
             surveys,
             act,
             eventTypes,
-            activitiesTypes
+            activitiesTypes,
+            devolutionStates
         });
 
     }catch(err){
@@ -819,10 +826,16 @@ function sleep(ms) {
 }
 
 function base64_encode(file) {
-    // read binary data
-    var bitmap = fs.readFileSync(file);
-    // convert binary data to base64 encoded string
-    return new Buffer(bitmap).toString('base64');
+
+    try{
+        // read binary data
+        var bitmap = fs.readFileSync(file);
+        // convert binary data to base64 encoded string
+        return new Buffer(bitmap).toString('base64');
+    }catch(error){
+        return null
+    }
+    
 }
 
 
@@ -833,6 +846,8 @@ function base64_encode(file) {
 client.get('student', function(err, reply) {
     console.log("reply",reply);
 })*/
+
+// cliente --> servidor  
 
 client.on('message', function(channel, key) {
     // do what you want when a value is updated
@@ -845,10 +860,80 @@ client.on('message', function(channel, key) {
                 const objectVlue = JSON.parse(value)
 
                 const { type, appointment } = objectVlue 
-
+                
                 const dir = __dirname+"/files/app/"+type+"/"+appointment
-                const base64str = base64_encode(dir+"/frontImageLabeled.png");
-                console.log("base64str",base64str)
+                const frontImageLabeled64 = base64_encode(dir+"/frontImageLabeled.png");
+                const leftImageLabeled64 = base64_encode(dir+"/leftImageLabeled.png");
+                const rightImageLabeled64 = base64_encode(dir+"/rightImageLabeled.png");
+                const backImageLabeled64 = base64_encode(dir+"/backImageLabeled.png");
+                const odometerImageLabeled64 = base64_encode(dir+"/odometerImageLabeled.png");
+                const contractImageLabeled64 = base64_encode(dir+"/contractImageLabeled.png");
+                const checkImageLabeled64 = base64_encode(dir+"/checkImageLabeled.png");
+                const inventoryImageLabeled64 = base64_encode(dir+"/inventoryImageLabeled.png");
+
+                let requestToSend
+                
+                if( type === "deliver" )
+                {
+                    requestToSend = {
+                        APIKEYAOAAPP:"yNPlsmOGgZoGmH$8",
+                        upload_img_departure:true,
+                        idCita:appointment,
+                        recorridoEnParqueadero:0, // ???
+                        kilometrajePrevioAldesplasamientoDomicilio:0, //kilometraje esta en patio antes de ir a la casa del asegurado , ya puedo enviarlo
+                        kilometrajeInicialAlservicio:0, //Es cuando llega a la casa , el kilometraje normal  
+                        observaciones:"",
+                        Nusuario:"",// Nombre del usuario
+                        img_odo_salida_f:odometerImageLabeled64,
+                        fotovh1_f:frontImageLabeled64,
+                        fotovh2_f:leftImageLabeled64,
+                        fotovh3_f:rightImageLabeled64,
+                        fotovh4_f:backImageLabeled64,
+                        eadicional1_f:"", //nuevas imagenes
+                        eadicional2_f:"" //nuevas imagenes
+                    }
+                }
+                else{
+                    requestToSend = {
+                        APIKEYAOAAPP:"yNPlsmOGgZoGmH$8",
+                        upload_img_return:true,
+                        idSiniestro:null, // ??? 
+                        idCita:appointment,
+                        observacionesd:"",
+                        obsUltimoEstado:"",
+                        observacionesfs:"",
+                        Siniestro_propio:"", // ???
+                        kmdevolucion:0, // kilomeatraje defecto o el kilometraje cuando lo recibe 
+                        Nuevo_estadod:1, // selector en la interfaz grafica 
+                        kilometrajeAlTerminarEldesplasamientoDomicilio:0, // regreso a patio
+                        img_odo_entrada_f:odometerImageLabeled64,
+                        fotovh5_f:frontImageLabeled64,
+                        fotovh6_f:leftImageLabeled64,
+                        fotovh7_f:rightImageLabeled64,
+                        fotovh8_f:backImageLabeled64,
+                        fotovh9_f:"",
+                        dadicional3_f:"",
+                        dadicional4_f:""
+                    }
+                }
+
+                const options = {
+                    url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
+                    method: 'POST',
+                    json: requestToSend
+                }
+        
+                new Promise(function (resolve, reject) {
+                    request(options, function(error, response, body){
+                        if(error) reject(null);
+                        else {
+                            console.log("appointmentRespone",body)
+                            resolve(body);
+                        } 
+                    });
+                })        
+
+
              });
             break        
         default:
