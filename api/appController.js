@@ -645,6 +645,8 @@ exports.proccessAppointment = async function (req, res, next) {
             userN
         } = req.body
 
+        console.log("delivery in server",deliveryKilometer)
+
         let appointmentResult = await executeQuery(queries.get_appointment_info,[appointment]);
 
         if(!appointmentResult[0])
@@ -971,7 +973,7 @@ client.on('message', function(channel, key) {
                         APIKEYAOAAPP:"yNPlsmOGgZoGmH$8",
                         upload_img_departure:true,
                         idCita:appointment,
-                        kilometrajePrevioAldesplasamientoDomicilio: deliveryKilometer ? deliveryKilometer : null, //kilometraje esta en patio antes de ir a la casa del asegurado , ya puedo enviarlo
+                        kilometrajePrevioAldesplasamientoDomicilio: deliveryKilometer, //kilometraje esta en patio antes de ir a la casa del asegurado , ya puedo enviarlo
                         kilometrajeInicialAlservicio: kilometersRegistered, //Es cuando llega a la casa , el kilometraje normal  
                         observaciones:"Enviado desde el app",
                         Nusuario:userN,// Nombre del usuario
@@ -998,7 +1000,7 @@ client.on('message', function(channel, key) {
                         Siniestro_propio:"", // ???
                         kmdevolucion:kilometersRegistered, // kilomeatraje defecto o el kilometraje cuando lo recibe 
                         Nuevo_estadod:devolutionState, // selector en la interfaz grafica 
-                        kilometrajeAlTerminarEldesplasamientoDomicilio:deliveryKilometer ? deliveryKilometer : null, // regreso a patio
+                        kilometrajeAlTerminarEldesplasamientoDomicilio:deliveryKilometer, // regreso a patio
                         img_odo_entrada_f:odometerImageLabeled64,
                         fotovh5_f:frontImageLabeled64,
                         fotovh6_f:leftImageLabeled64,
@@ -1013,7 +1015,9 @@ client.on('message', function(channel, key) {
                     }
                 }
 
-                console.log("requestToSend",requestToSend)
+                //console.log("requestToSend",requestToSend)
+
+                console.log("proccess done")
 
                 const options = {
                     url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
