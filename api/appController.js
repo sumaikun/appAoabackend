@@ -481,6 +481,87 @@ exports.closeEvent = async function (req, res, next) {
 
 }
 
+exports.assignOperatorDeliver = async function (req, res, next) {
+
+    try{  
+
+        const checkappointment = await executeQuery(queries.get_operator_deliver,[req.body.appointment]);
+
+        console.log("checkappointment",checkappointment)
+
+        if( checkappointment[0] && checkappointment[0].operario_domicilio == 0 )
+        {
+            await executeQuery(queries.assign_operator_deliver,[req.body.operatorId,req.body.appointment]);
+            res.send({message:"ok"});
+        }else{
+            res.status(400).send();
+        }
+
+    } catch(err){
+        next(err);
+    }
+    
+}
+
+exports.checkIfOperatorDeliver = async function (req, res, next) {
+
+    //console.log("checkIfOperatorDeliver")
+
+    try{  
+        const checkappointment = await executeQuery(queries.get_operator_deliver,[req.params.appointment]);
+        if( checkappointment[0] )
+        {
+            const operatorResult = await executeQuery(queries.operator_row,[checkappointment[0].operario_domicilio]);
+            console.log("operatorResult",operatorResult)
+            res.send({message:checkappointment[0],operatorResult});
+            //return String(result[0].operario_domicilio) == String(req.params.operatorId)
+        }
+        else{
+            res.send({message:null});
+        }
+    }catch(err){
+        next(err);
+    }   
+   
+}
+
+exports.assignOperatorDevolution = async function (req, res, next) {
+
+    try{  
+
+        const checkappointment = await executeQuery(queries.get_operator_devolution,[req.body.appointment]);
+
+        if( checkappointment[0] && checkappointment[0].operario_domiciliod == 0 )
+        {
+            await executeQuery(queries.assign_operator_devolution,[req.body.operatorId,req.body.appointment]);
+            res.send({message:"ok"});
+        }else{
+            res.status(400).send();
+        }
+
+    } catch(err){
+        next(err);
+    }
+}
+
+exports.checkIfOperatorDevolution = async function (req, res, next) {
+    try{  
+        const result = await executeQuery(queries.get_operator_devolution,[req.params.appointment]);
+        if( checkappointment[0] )
+        {
+            const operatorResult = await executeQuery(queries.operator_row,[checkappointment[0].operario_domiciliod]);
+            console.log("operatorResult",operatorResult)
+            res.send({message:checkappointment[0],operatorResult});
+            //return String(result[0].operario_domicilio) == String(req.params.operatorId)
+        }
+        else{
+            res.send({message:null});
+        }
+    }catch(err){
+        next(err);
+    }  
+}
+
 
 
 exports.testingImage = async function (req, res, next) {
@@ -557,7 +638,11 @@ exports.proccessAppointment = async function (req, res, next) {
         const { appointment, type, frontImageSrc,
             leftImageSrc, rightImageSrc, backImageSrc,
             odometerImageSrc, contractImageSrc,
-            checkImageSrc, inventoryImageSrc, pictureTimes
+            checkImageSrc, inventoryImageSrc, pictureTimes, 
+            kilometersRegistered,
+            deliveryKilometer,
+            devolutionState,
+            userN
         } = req.body
 
         let appointmentResult = await executeQuery(queries.get_appointment_info,[appointment]);
@@ -742,7 +827,10 @@ exports.proccessAppointment = async function (req, res, next) {
             await mergeImages([dir+"/inventoryImage.jpeg",dir+"/inventoryImageLabel.png"],dir,"inventoryImageLabeled")
         }
         
-        readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment }))
+        readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment,  kilometersRegistered,
+            deliveryKilometer,
+            devolutionState,
+            userN }))
 
         res.send({message:"ok"});
 
@@ -859,7 +947,10 @@ client.on('message', function(channel, key) {
 
                 const objectVlue = JSON.parse(value)
 
-                const { type, appointment } = objectVlue 
+                const { type, appointment,  kilometersRegistered,
+                    deliveryKilometer,
+                    devolutionState,
+                    userN } = objectVlue 
                 
                 const dir = __dirname+"/files/app/"+type+"/"+appointment
                 const frontImageLabeled64 = base64_encode(dir+"/frontImageLabeled.png");
@@ -867,9 +958,10 @@ client.on('message', function(channel, key) {
                 const rightImageLabeled64 = base64_encode(dir+"/rightImageLabeled.png");
                 const backImageLabeled64 = base64_encode(dir+"/backImageLabeled.png");
                 const odometerImageLabeled64 = base64_encode(dir+"/odometerImageLabeled.png");
-                const contractImageLabeled64 = base64_encode(dir+"/contractImageLabeled.png");
-                const checkImageLabeled64 = base64_encode(dir+"/checkImageLabeled.png");
-                const inventoryImageLabeled64 = base64_encode(dir+"/inventoryImageLabeled.png");
+
+                const contractImageLabeled64 = base64_encode(dir+"/contractImageLabeled.png"); //  img_contrato_f
+                const checkImageLabeled64 = base64_encode(dir+"/checkImageLabeled.png"); // la lista de chequeo no tiene formulario congelamiento_f
+                const inventoryImageLabeled64 = base64_encode(dir+"/inventoryImageLabeled.png"); // esta es la acta de entrega, al final firma, firma acta y contrato img_inv_salida_f
 
                 let requestToSend
                 
@@ -879,43 +971,49 @@ client.on('message', function(channel, key) {
                         APIKEYAOAAPP:"yNPlsmOGgZoGmH$8",
                         upload_img_departure:true,
                         idCita:appointment,
-                        recorridoEnParqueadero:0, // ???
-                        kilometrajePrevioAldesplasamientoDomicilio:0, //kilometraje esta en patio antes de ir a la casa del asegurado , ya puedo enviarlo
-                        kilometrajeInicialAlservicio:0, //Es cuando llega a la casa , el kilometraje normal  
-                        observaciones:"",
-                        Nusuario:"",// Nombre del usuario
-                        img_odo_salida_f:odometerImageLabeled64,
+                        kilometrajePrevioAldesplasamientoDomicilio: deliveryKilometer ? deliveryKilometer : null, //kilometraje esta en patio antes de ir a la casa del asegurado , ya puedo enviarlo
+                        kilometrajeInicialAlservicio: kilometersRegistered, //Es cuando llega a la casa , el kilometraje normal  
+                        observaciones:"Enviado desde el app",
+                        Nusuario:userN,// Nombre del usuario
+                        img_odo_salida_f:odometerImageLabeled64, 
                         fotovh1_f:frontImageLabeled64,
                         fotovh2_f:leftImageLabeled64,
                         fotovh3_f:rightImageLabeled64,
                         fotovh4_f:backImageLabeled64,
                         eadicional1_f:"", //nuevas imagenes
-                        eadicional2_f:"" //nuevas imagenes
+                        eadicional2_f:"", //nuevas imagenes
+                        img_contrato_f:contractImageLabeled64,
+                        congelamiento_f:checkImageLabeled64,
+                        img_inv_salida_f:inventoryImageLabeled64
                     }
                 }
                 else{
                     requestToSend = {
                         APIKEYAOAAPP:"yNPlsmOGgZoGmH$8",
                         upload_img_return:true,
-                        idSiniestro:null, // ??? 
                         idCita:appointment,
                         observacionesd:"",
                         obsUltimoEstado:"",
                         observacionesfs:"",
                         Siniestro_propio:"", // ???
-                        kmdevolucion:0, // kilomeatraje defecto o el kilometraje cuando lo recibe 
-                        Nuevo_estadod:1, // selector en la interfaz grafica 
-                        kilometrajeAlTerminarEldesplasamientoDomicilio:0, // regreso a patio
+                        kmdevolucion:kilometersRegistered, // kilomeatraje defecto o el kilometraje cuando lo recibe 
+                        Nuevo_estadod:devolutionState, // selector en la interfaz grafica 
+                        kilometrajeAlTerminarEldesplasamientoDomicilio:deliveryKilometer ? deliveryKilometer : null, // regreso a patio
                         img_odo_entrada_f:odometerImageLabeled64,
                         fotovh5_f:frontImageLabeled64,
                         fotovh6_f:leftImageLabeled64,
                         fotovh7_f:rightImageLabeled64,
                         fotovh8_f:backImageLabeled64,
+                        Nusuario:userN,
                         fotovh9_f:"",
                         dadicional3_f:"",
-                        dadicional4_f:""
+                        dadicional4_f:"",
+                        congelamiento_f:checkImageLabeled64,
+                        img_inv_salida_f:inventoryImageLabeled64
                     }
                 }
+
+                console.log("requestToSend",requestToSend)
 
                 const options = {
                     url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',

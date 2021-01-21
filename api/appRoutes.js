@@ -23,6 +23,14 @@ module.exports = function(router) {
     //Testing images
     router.post('/testingImage', appMethods.testingImage);
     router.post('/testingImage2', appMethods.testingImage2);
+
+    //Check operator assign to appointment
+
+    router.post('/assignOperatorDeliver', md.authenticated, appMethods.assignOperatorDeliver);
+    router.get('/checkIfOperatorDeliver/:operatorId/:appointment', md.authenticated, appMethods.checkIfOperatorDeliver);
+
+    router.post('/assignOperatorDevolution', md.authenticated, appMethods.testingImage);
+    router.get('/checkIfOperatorDevolution/:operatorId/:appointment', md.authenticated, appMethods.testingImage2);
 }
 
 
