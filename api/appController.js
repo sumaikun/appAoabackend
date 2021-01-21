@@ -635,17 +635,27 @@ exports.proccessAppointment = async function (req, res, next) {
     //It can happened that was already proccessed
 
     try{
-        const { appointment, type, frontImageSrc,
-            leftImageSrc, rightImageSrc, backImageSrc,
-            odometerImageSrc, contractImageSrc,
-            checkImageSrc, inventoryImageSrc, pictureTimes, 
-            kilometersRegistered,
-            deliveryKilometer,
-            devolutionState,
-            userN
+        const { 
+                appointment,
+                type,
+                frontImageSrc,
+                leftImageSrc,
+                rightImageSrc,
+                backImageSrc,
+                odometerImageSrc,
+                contractImageSrc,
+                checkImageSrc,
+                inventoryImageSrc,
+                aditional1ImageSrc,
+                aditional2ImageSrc,
+                pictureTimes, 
+                kilometersRegistered,
+                deliveryKilometer,
+                devolutionState,
+                userN
         } = req.body
 
-        console.log("delivery in server",deliveryKilometer)
+        //console.log("delivery in server",deliveryKilometer)
 
         let appointmentResult = await executeQuery(queries.get_appointment_info,[appointment]);
 
@@ -828,6 +838,42 @@ exports.proccessAppointment = async function (req, res, next) {
     
             await mergeImages([dir+"/inventoryImage.jpeg",dir+"/inventoryImageLabel.png"],dir,"inventoryImageLabeled")
         }
+
+        if(aditional1ImageSrc)
+        {
+            const aditional1ImageSrcBitmap = new Buffer(aditional1ImageSrc, 'base64');
+            fs.writeFileSync(dir+"/aditional1Image.jpeg", aditional1ImageSrcBitmap);
+
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/aditional1Image.jpeg");
+
+            let message =  `${spanishType} tomada: ${pictureTimes.aditional1Image} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"aditional1ImageLabel",dimensions.width, 50)
+
+            await sleep(400)
+    
+            await mergeImages([dir+"/aditional1Image.jpeg",dir+"/aditional1ImageLabel.png"],dir,"aditional1ImageLabeled")
+        }
+
+        if(aditional2ImageSrc)
+        {
+            const aditional2ImageSrcBitmap = new Buffer(aditional2ImageSrc, 'base64');
+            fs.writeFileSync(dir+"/aditional2Image.jpeg", aditional2ImageSrcBitmap);
+
+            await sleep(100)
+
+            const dimensions = sizeOf(dir+"/aditional2Image.jpeg");
+
+            let message =  `${spanishType} tomada: ${pictureTimes.aditional2Image} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+            await generateImageLabel(dir,message,"aditional2ImageLabel",dimensions.width, 50)
+
+            await sleep(400)
+    
+            await mergeImages([dir+"/aditional2Image.jpeg",dir+"/aditional2ImageLabel.png"],dir,"aditional2ImageLabeled")
+        }
         
         readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment,  kilometersRegistered,
             deliveryKilometer,
@@ -955,15 +1001,18 @@ client.on('message', function(channel, key) {
                     userN } = objectVlue 
                 
                 const dir = __dirname+"/files/app/"+type+"/"+appointment
-                const frontImageLabeled64 = base64_encode(dir+"/frontImageLabeled.png");
-                const leftImageLabeled64 = base64_encode(dir+"/leftImageLabeled.png");
-                const rightImageLabeled64 = base64_encode(dir+"/rightImageLabeled.png");
-                const backImageLabeled64 = base64_encode(dir+"/backImageLabeled.png");
-                const odometerImageLabeled64 = base64_encode(dir+"/odometerImageLabeled.png");
+                const frontImageLabeled64 =  fs.existsSync(dir+"/frontImageLabeled.png") ? base64_encode(dir+"/frontImageLabeled.png") : null;
+                const leftImageLabeled64 =  fs.existsSync(dir+"/leftImageLabeled.png") ? base64_encode(dir+"/leftImageLabeled.png") : null ;
+                const rightImageLabeled64 = fs.existsSync(dir+"/rightImageLabeled.png") ? base64_encode(dir+"/rightImageLabeled.png") : null;
+                const backImageLabeled64 =  fs.existsSync(dir+"/backImageLabeled.png") ? base64_encode(dir+"/backImageLabeled.png") : null ;
+                const odometerImageLabeled64 =  fs.existsSync(dir+"/odometerImageLabeled.png") ? base64_encode(dir+"/odometerImageLabeled.png") : null;
 
-                const contractImageLabeled64 = base64_encode(dir+"/contractImageLabeled.png"); //  img_contrato_f
-                const checkImageLabeled64 = base64_encode(dir+"/checkImageLabeled.png"); // la lista de chequeo no tiene formulario congelamiento_f
-                const inventoryImageLabeled64 = base64_encode(dir+"/inventoryImageLabeled.png"); // esta es la acta de entrega, al final firma, firma acta y contrato img_inv_salida_f
+                const contractImageLabeled64 = fs.existsSync(dir+"/contractImageLabeled.png") ? base64_encode(dir+"/contractImageLabeled.png") : null ; //  img_contrato_f
+                const checkImageLabeled64 =  fs.existsSync(dir+"/checkImageLabeled.png") ? base64_encode(dir+"/checkImageLabeled.png") : null; // la lista de chequeo no tiene formulario congelamiento_f
+                const inventoryImageLabeled64 = fs.existsSync(dir+"/inventoryImageLabeled.png") ? base64_encode(dir+"/inventoryImageLabeled.png") : null; // esta es la acta de entrega, al final firma, firma acta y contrato img_inv_salida_f
+                
+                const aditional1ImageLabeled64 = fs.existsSync(dir+"/aditional1ImageLabeled.png") ? base64_encode(dir+"/aditional1ImageLabeled.png") : null;
+                const aditional2ImageLabeled64 = fs.existsSync(dir+"/aditional1ImageLabeled.png") ?  base64_encode(dir+"/aditional2ImageLabeled.png") : null;
 
                 let requestToSend
                 
@@ -982,8 +1031,8 @@ client.on('message', function(channel, key) {
                         fotovh2_f:leftImageLabeled64,
                         fotovh3_f:rightImageLabeled64,
                         fotovh4_f:backImageLabeled64,
-                        eadicional1_f:"", //nuevas imagenes
-                        eadicional2_f:"", //nuevas imagenes
+                        eadicional1_f:aditional1ImageLabeled64, //nuevas imagenes
+                        eadicional2_f:aditional2ImageLabeled64, //nuevas imagenes
                         img_contrato_f:contractImageLabeled64,
                         congelamiento_f:checkImageLabeled64,
                         img_inv_salida_f:inventoryImageLabeled64
@@ -1008,8 +1057,8 @@ client.on('message', function(channel, key) {
                         fotovh8_f:backImageLabeled64,
                         Nusuario:userN,
                         fotovh9_f:"",
-                        dadicional3_f:"",
-                        dadicional4_f:"",
+                        dadicional3_f:aditional1ImageLabeled64,
+                        dadicional4_f:aditional2ImageLabeled64,
                         congelamiento_f:checkImageLabeled64,
                         img_inv_salida_f:inventoryImageLabeled64
                     }
