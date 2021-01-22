@@ -103,7 +103,7 @@ exports.authUser = async function (req, res, next) {
         if(ifAdmin.length > 0)
         {
             const token = jwt.sign({name:ifAdmin[0].nombre}, properties.appkey, {
-                expiresIn: "8h"
+                expiresIn: "48h"
             });
 
             offices = await executeQuery(queries.get_actives_offices);
@@ -481,6 +481,50 @@ exports.closeEvent = async function (req, res, next) {
 
 }
 
+exports.checkKilometers = async function (req, res, next) {
+    
+    try{  
+       
+        const placa = req.body.plate
+
+        options = {
+            url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
+            method: 'POST',
+            json: {
+                APIKEYAOAAPP: "yNPlsmOGgZoGmH$8",
+                ultimo_km_vh: "true",
+                placa,
+            }
+        }
+
+        console.log({
+            APIKEYAOAAPP: "yNPlsmOGgZoGmH$8",
+            ultimo_km_vh: "true",
+            placa,
+        })
+
+        const eventResponse = await new Promise(function (resolve, reject) {
+            request(options, function(error, response, body){
+                if(error) reject(null);
+                else resolve(body);
+            });
+        })
+
+        console.log("eventResponse",eventResponse)
+
+        if(eventResponse.estado === 1)
+        {
+            res.send({message:eventResponse.odometro_final});
+        }else{
+            res.status(400).send();
+        }
+
+    } catch(err){
+        next(err);
+    }
+
+}
+
 exports.assignOperatorDeliver = async function (req, res, next) {
 
     try{  
@@ -546,7 +590,7 @@ exports.assignOperatorDevolution = async function (req, res, next) {
 
 exports.checkIfOperatorDevolution = async function (req, res, next) {
     try{  
-        const result = await executeQuery(queries.get_operator_devolution,[req.params.appointment]);
+        const checkappointment = await executeQuery(queries.get_operator_devolution,[req.params.appointment]);
         if( checkappointment[0] )
         {
             const operatorResult = await executeQuery(queries.operator_row,[checkappointment[0].operario_domiciliod]);
@@ -1060,7 +1104,7 @@ client.on('message', function(channel, key) {
                         dadicional3_f:aditional1ImageLabeled64,
                         dadicional4_f:aditional2ImageLabeled64,
                         congelamiento_f:checkImageLabeled64,
-                        img_inv_salida_f:inventoryImageLabeled64
+                        img_inv_entrada_f:inventoryImageLabeled64
                     }
                 }
 

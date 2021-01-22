@@ -29,8 +29,11 @@ module.exports = function(router) {
     router.post('/assignOperatorDeliver', md.authenticated, appMethods.assignOperatorDeliver);
     router.get('/checkIfOperatorDeliver/:operatorId/:appointment', md.authenticated, appMethods.checkIfOperatorDeliver);
 
-    router.post('/assignOperatorDevolution', md.authenticated, appMethods.testingImage);
-    router.get('/checkIfOperatorDevolution/:operatorId/:appointment', md.authenticated, appMethods.testingImage2);
+    router.post('/assignOperatorDevolution', md.authenticated, appMethods.assignOperatorDevolution);
+    router.get('/checkIfOperatorDevolution/:operatorId/:appointment', md.authenticated, appMethods.checkIfOperatorDevolution);
+
+    //check kilometers
+    router.post('/checkKilometers', md.authenticated, appMethods.checkKilometers);
 }
 
 
