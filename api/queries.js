@@ -31,7 +31,7 @@ module.exports = {
     FROM cita_servicio AS c INNER JOIN siniestro AS s ON c.siniestro = s.id INNER JOIN vehiculo as v on v.placa = c.placa Inner join linea_vehiculo as l on l.id = v.linea
     WHERE c.oficina in ? and ( c.fec_devolucion between ? and ? ) AND c.estadod = "P" ORDER BY s.id DESC`,
     //obtener información especifica del siniestro
-    get_siniester_info: `SELECT c.id as citaid,s.numero, a.nombre as aseguradora , s.asegurado_nombre, c.conductor, s.declarante_nombre, s.placa AS placaSiniestro
+    get_siniester_info: `SELECT c.id as citaid,s.numero, s.id as siniId, a.nombre as aseguradora , s.asegurado_nombre, c.conductor, s.declarante_nombre, s.placa AS placaSiniestro
     , o.nombre AS oficina , c.placa AS placaEntregar, c.agendada_por, c.dias_servicio  FROM cita_servicio AS c INNER JOIN siniestro AS s 
     ON c.siniestro = s.id INNER JOIN aseguradora AS a ON s.aseguradora = a.id INNER JOIN oficina AS o ON c.oficina = o.id WHERE c.id in ? `,
     get_appointment_info:`SELECT * FROM cita_servicio  WHERE id = ? `,
