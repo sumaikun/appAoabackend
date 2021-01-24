@@ -698,7 +698,8 @@ exports.proccessAppointment = async function (req, res, next) {
                 kilometersRegistered,
                 deliveryKilometer,
                 devolutionState,
-                userN
+                userN,
+                userId
         } = req.body
 
         //console.log("delivery in server",deliveryKilometer)
@@ -1083,7 +1084,9 @@ exports.proccessAppointment = async function (req, res, next) {
         readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment,  kilometersRegistered,
             deliveryKilometer,
             devolutionState,
-            userN }))
+            userN,
+            userId
+        }))
 
         res.send({message:"ok"});
 
@@ -1201,10 +1204,13 @@ client.on('message', function(channel, key) {
 
                 const objectVlue = JSON.parse(value)
 
-                const { type, appointment,  kilometersRegistered,
+                const { type, appointment,
+                    kilometersRegistered,
                     deliveryKilometer,
                     devolutionState,
-                    userN } = objectVlue 
+                    userN,
+                    userId
+                 } = objectVlue 
                 
                 const dir = __dirname+"/files/app/"+type+"/"+appointment
                 const frontImageLabeled64 =  fs.existsSync(dir+"/frontImageLabeled.png") ? base64_encode(dir+"/frontImageLabeled.png") : null;
@@ -1241,7 +1247,9 @@ client.on('message', function(channel, key) {
                         eadicional2_f:aditional2ImageLabeled64, //nuevas imagenes
                         img_contrato_f:contractImageLabeled64,
                         congelamiento_f:checkImageLabeled64,
-                        img_inv_salida_f:inventoryImageLabeled64
+                        img_inv_salida_f:inventoryImageLabeled64,
+                        operario_domicilio:userId,
+                        operario_domiciliod:userId
                     }
                 }
                 else{
@@ -1266,7 +1274,9 @@ client.on('message', function(channel, key) {
                         dadicional3_f:aditional1ImageLabeled64,
                         dadicional4_f:aditional2ImageLabeled64,
                         congelamiento_f:checkImageLabeled64,
-                        img_inv_entrada_f:inventoryImageLabeled64
+                        img_inv_entrada_f:inventoryImageLabeled64,
+                        operario_domicilio:userId,
+                        operario_domiciliod:userId
                     }
                 }
 
@@ -1293,7 +1303,7 @@ client.on('message', function(channel, key) {
                         }                  
                        
                     } 
-                });                  
+                });                 
 
 
              });
