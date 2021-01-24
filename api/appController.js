@@ -13,7 +13,9 @@ const sizeOf = require('image-size');
 const fs = require('fs');
 const redis = require("redis");
 const client = redis.createClient();
+const Path = require('path');
 var readWriteClient = redis.createClient();
+
 
 client.config('set','notify-keyspace-events','KEA');
 
@@ -674,7 +676,7 @@ exports.testingImage2 = async function (req, res, next) {
 
 exports.proccessAppointment = async function (req, res, next) { 
 
-    console.log("proccess appointment got it")
+    console.log("proccess appointment got it 3")
 
     //It can happened that was already proccessed
 
@@ -732,23 +734,41 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/frontImage.jpeg");
+            const read = await new Promise((resolve, reject) => {
+                 Jimp.read(dir+"/frontImage.jpeg", function (err, test) {
+                    if (err) reject(err);
+                    test.resize(1280, 960).quality(40).write(dir+"/frontImageResized.jpeg"); 
+                    resolve(true)
+                });
+            })
 
-            //pictureTimes.frontCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+            //console.log("read",read)
 
-            let message =  `${spanishType} tomada: ${pictureTimes.frontCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+            if(read)
+            {
+                await sleep(150)
 
-            await generateImageLabel(dir,message,"frontImageLabel",dimensions.width, 50)
-
-            await sleep(400)
+                const dimensions = sizeOf(dir+"/frontImageResized.jpeg");
     
-            await mergeImages([dir+"/frontImage.jpeg",dir+"/frontImageLabel.png"],dir,"frontImageLabeled")
+                //pictureTimes.frontCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+    
+                let message =  `${spanishType} tomada: ${pictureTimes.frontCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+    
+                await generateImageLabel(dir,message,"frontImageLabel",dimensions.width, 50)
+    
+                await sleep(300)
+        
+                await mergeImages([dir+"/frontImageResized.jpeg",dir+"/frontImageLabel.png"],dir,"frontImageLabeled")
+              
+    
+                //await sleep(100)
+    
+                //const base64str = base64_encode(dir+"/frontImageLabeled.png");
+    
+                //console.log("base64str",base64str)
+            }
 
-            //await sleep(100)
-
-            //const base64str = base64_encode(dir+"/frontImageLabeled.png");
-
-            //console.log("base64str",base64str)
+           
         }
 
         if(leftImageSrc)
@@ -759,16 +779,33 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/leftImage.jpeg");
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/leftImage.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/leftImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
+
+           //console.log("read",read)
+
+           if(read)
+           {
+                await sleep(150)
+
+                const dimensions = sizeOf(dir+"/leftImageResized.jpeg");
+                
+                //pictureTimes.leftCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+                let message =  `${spanishType} tomada: ${pictureTimes.frontCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"leftImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/leftImageResized.jpeg",dir+"/leftImageLabel.png"],dir,"leftImageLabeled")
+           }
+
             
-            //pictureTimes.leftCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
-            let message =  `${spanishType} tomada: ${pictureTimes.frontCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
-
-            await generateImageLabel(dir,message,"leftImageLabel",dimensions.width, 50)
-
-            await sleep(400)
-    
-            await mergeImages([dir+"/leftImage.jpeg",dir+"/leftImageLabel.png"],dir,"leftImageLabeled")
         }
 
         if(rightImageSrc)
@@ -778,16 +815,31 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/rightImage.jpeg");
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/rightImage.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/rightImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
 
-            //pictureTimes.rightCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
-            let message =  `${spanishType} tomada: ${pictureTimes.rightCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+           //console.log("read",read)
 
-            await generateImageLabel(dir,message,"rightImageLabel",dimensions.width, 50)
+           if(read)
+           {
+                await sleep(150)
 
-            await sleep(400)
-    
-            await mergeImages([dir+"/rightImage.jpeg",dir+"/rightImageLabel.png"],dir,"rightImageLabeled")
+                const dimensions = sizeOf(dir+"/rightImageResized.jpeg");
+
+                //pictureTimes.rightCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+                let message =  `${spanishType} tomada: ${pictureTimes.rightCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"rightImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/rightImageResized.jpeg",dir+"/rightImageLabel.png"],dir,"rightImageLabeled")
+            }
         }
 
         if(backImageSrc)
@@ -797,16 +849,31 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/backImage.jpeg");
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/backImage.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/backImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
 
-            //pictureTimes.backCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
-            let message =  `${spanishType} tomada: ${pictureTimes.backCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+           //console.log("read",read)
 
-            await generateImageLabel(dir,message,"backImageLabel",dimensions.width, 50)
+           if(read)
+           {
+                await sleep(150)
 
-            await sleep(400)
-    
-            await mergeImages([dir+"/backImage.jpeg",dir+"/backImageLabel.png"],dir,"backImageLabeled")
+                const dimensions = sizeOf(dir+"/backImageResized.jpeg");
+
+                //pictureTimes.backCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+                let message =  `${spanishType} tomada: ${pictureTimes.backCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"backImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/backImageResized.jpeg",dir+"/backImageLabel.png"],dir,"backImageLabeled")
+            }
         }
 
         
@@ -817,15 +884,30 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/odometerImage.jpeg");
-            //pictureTimes.odometerCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
-            let message =  `${spanishType} tomada: ${pictureTimes.odometerCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/odometerImage.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/odometerImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
 
-            await generateImageLabel(dir,message,"odometerImageLabel",dimensions.width, 50)
+           //console.log("read",read)
 
-            await sleep(400)
-    
-            await mergeImages([dir+"/odometerImage.jpeg",dir+"/odometerImageLabel.png"],dir,"odometerImageLabeled")
+           if(read)
+           {
+                await sleep(150)
+
+                const dimensions = sizeOf(dir+"/odometerImageResized.jpeg");
+                //pictureTimes.odometerCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+                let message =  `${spanishType} tomada: ${pictureTimes.odometerCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"odometerImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/odometerImageResized.jpeg",dir+"/odometerImageLabel.png"],dir,"odometerImageLabeled")
+            }
         }
 
         if(contractImageSrc)
@@ -835,15 +917,31 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/contractImage.jpeg");
-            //pictureTimes.contractImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
-            let message =  `${spanishType} tomada: ${pictureTimes.contractImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
 
-            await generateImageLabel(dir,message,"contractImageLabel",dimensions.width, 50)
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/contractImage.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/contractImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
 
-            await sleep(400)
-    
-            await mergeImages([dir+"/contractImage.jpeg",dir+"/contractImageLabel.png"],dir,"contractImageLabeled")
+           //console.log("read",read)
+
+           if(read)
+           {
+                await sleep(150)
+
+                const dimensions = sizeOf(dir+"/contractImageResized.jpeg");
+                //pictureTimes.contractImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+                let message =  `${spanishType} tomada: ${pictureTimes.contractImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"contractImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/contractImageResized.jpeg",dir+"/contractImageLabel.png"],dir,"contractImageLabeled")
+            }
         }
         
         if(checkImageSrc)
@@ -853,15 +951,30 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/checkImage.jpeg");
-            //pictureTimes.checkCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
-            let message =  `${spanishType} tomada: ${pictureTimes.checkCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/checkImage.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/checkImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
 
-            await generateImageLabel(dir,message,"checkImageLabel",dimensions.width, 50)
+           //console.log("read",read)
 
-            await sleep(400)
-    
-            await mergeImages([dir+"/checkImage.jpeg",dir+"/checkImageLabel.png"],dir,"checkImageLabeled")
+           if(read)
+           {
+                await sleep(150)
+
+                const dimensions = sizeOf(dir+"/checkImageResized.jpeg");
+                //pictureTimes.checkCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+                let message =  `${spanishType} tomada: ${pictureTimes.checkCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"checkImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/checkImageResized.jpeg",dir+"/checkImageLabel.png"],dir,"checkImageLabeled")
+            }
         }
         
 
@@ -872,15 +985,30 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/inventoryImage.jpeg");
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/inventoryImage.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/inventoryImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
 
-            let message =  `${spanishType} tomada: ${pictureTimes.inventoryCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+           //console.log("read",read)
 
-            await generateImageLabel(dir,message,"inventoryImageLabel",dimensions.width, 50)
+           if(read)
+           {
+                await sleep(150)
 
-            await sleep(400)
-    
-            await mergeImages([dir+"/inventoryImage.jpeg",dir+"/inventoryImageLabel.png"],dir,"inventoryImageLabeled")
+                const dimensions = sizeOf(dir+"/inventoryImageResized.jpeg");
+
+                let message =  `${spanishType} tomada: ${pictureTimes.inventoryCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"inventoryImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/inventoryImageResized.jpeg",dir+"/inventoryImageLabel.png"],dir,"inventoryImageLabeled")
+            }
         }
 
         if(aditional1ImageSrc)
@@ -890,15 +1018,32 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/aditional1Image.jpeg");
 
-            let message =  `${spanishType} tomada: ${pictureTimes.aditional1Image} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/aditional1Image.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/aditional1ImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
 
-            await generateImageLabel(dir,message,"aditional1ImageLabel",dimensions.width, 50)
+           //console.log("read",read)
 
-            await sleep(400)
-    
-            await mergeImages([dir+"/aditional1Image.jpeg",dir+"/aditional1ImageLabel.png"],dir,"aditional1ImageLabeled")
+           if(read)
+           {
+                await sleep(150)
+
+                const dimensions = sizeOf(dir+"/aditional1ImageResized.jpeg");
+
+                let message =  `${spanishType} tomada: ${pictureTimes.aditional1Image} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"aditional1ImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/aditional1ImageResized.jpeg",dir+"/aditional1ImageLabel.png"],dir,"aditional1ImageLabeled")
+
+           }
         }
 
         if(aditional2ImageSrc)
@@ -908,15 +1053,31 @@ exports.proccessAppointment = async function (req, res, next) {
 
             await sleep(100)
 
-            const dimensions = sizeOf(dir+"/aditional2Image.jpeg");
 
-            let message =  `${spanishType} tomada: ${pictureTimes.aditional2Image} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+            const read = await new Promise((resolve, reject) => {
+                Jimp.read(dir+"/aditional2Image.jpeg", function (err, test) {
+                   if (err) reject(err);
+                   test.resize(1280, 960).quality(40).write(dir+"/aditional2ImageResized.jpeg"); 
+                   resolve(true)
+               });
+           })
 
-            await generateImageLabel(dir,message,"aditional2ImageLabel",dimensions.width, 50)
+           //console.log("read",read)
 
-            await sleep(400)
-    
-            await mergeImages([dir+"/aditional2Image.jpeg",dir+"/aditional2ImageLabel.png"],dir,"aditional2ImageLabeled")
+           if(read)
+            {
+                await sleep(150)
+
+                const dimensions = sizeOf(dir+"/aditional2ImageResized.jpeg");
+
+                let message =  `${spanishType} tomada: ${pictureTimes.aditional2Image} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+                await generateImageLabel(dir,message,"aditional2ImageLabel",dimensions.width, 50)
+
+                await sleep(300)
+        
+                await mergeImages([dir+"/aditional2ImageResized.jpeg",dir+"/aditional2ImageLabel.png"],dir,"aditional2ImageLabeled")
+            }
         }
         
         readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment,  kilometersRegistered,
@@ -927,6 +1088,7 @@ exports.proccessAppointment = async function (req, res, next) {
         res.send({message:"ok"});
 
     }catch(err){
+        console.log("error",err)
         next(err);
     }    
 
@@ -988,7 +1150,7 @@ async function mergeImages(images,dir,name) {
                 data[0].composite(data[1],0,0);  
                 //data[0].composite(data[1],0,30);        
                 let file = `/${name}.png`
-                data[0].write(dir+file, function() {
+                data[0].quality(50).write(dir+file, function() {
                     console.log("wrote merge image");
                     resolve(true) 
                 });
@@ -1116,17 +1278,22 @@ client.on('message', function(channel, key) {
                     url: 'https://app.aoacolombia.com/Control/operativo/webservicesAppAoa.php',
                     method: 'POST',
                     json: requestToSend
-                }
-        
-                new Promise(function (resolve, reject) {
-                    request(options, function(error, response, body){
-                        if(error) reject(null);
-                        else {
-                            console.log("appointmentRespone",body)
-                            resolve(body);
-                        } 
-                    });
-                })        
+                }        
+          
+                request(options, function(error, body, response){
+                    if(error) {
+                        console.log("error in aoa server", error)
+                        
+                    }
+                    else {
+                        console.log("appointmentRespone",response.estado)   
+                        if( response.estado === 1 )
+                        {
+                            deleteFolderRecursive(dir)
+                        }                  
+                       
+                    } 
+                });                  
 
 
              });
@@ -1139,3 +1306,20 @@ client.on('message', function(channel, key) {
 /*client.on('proccessAppointmentsImages', function(err, reply) {
     console.log("reply",reply);
 })*/
+
+
+const deleteFolderRecursive = function (directoryPath) {
+    if (fs.existsSync(directoryPath)) {
+        fs.readdirSync(directoryPath).forEach((file, index) => {
+          const curPath = Path.join(directoryPath, file);
+          if (fs.lstatSync(curPath).isDirectory()) {
+           // recurse
+            deleteFolderRecursive(curPath);
+          } else {
+            // delete file
+            fs.unlinkSync(curPath);
+          }
+        });
+        fs.rmdirSync(directoryPath);
+      }
+    };

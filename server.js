@@ -3,7 +3,7 @@ var bodyParser = require('body-parser');
 var properties = require("./properties");
 var appRoutes = require("./api/appRoutes");
 var app = express();
-var bodyParserJSON = bodyParser.json({limit: '5mb'});
+var bodyParserJSON = bodyParser.json({limit: '100mb'});
 var bodyParserURLEncoded = bodyParser.urlencoded({extended:true});
 var timeout = require('connect-timeout');
 
