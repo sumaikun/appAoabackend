@@ -1186,6 +1186,8 @@ exports.sendToqueue = async function (req, res, next) {
             userN,
             userId
         } = req.body
+
+        console.log("req.body",req.body)
     
         readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment,  kilometersRegistered,
             deliveryKilometer,
