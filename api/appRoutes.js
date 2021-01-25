@@ -18,7 +18,8 @@ module.exports = function(router) {
     router.post('/closeEvent', md.authenticated, appMethods.closeEvent);
 
     //App images
-    router.post('/proccessAppointment', appMethods.proccessAppointment);
+    router.post('/proccessAppointment',md.authenticated, appMethods.proccessAppointment);
+    router.post('/sendToqueue', md.authenticated, appMethods.sendToqueue);
 
     //Testing images
     router.post('/testingImage', appMethods.testingImage);

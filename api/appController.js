@@ -105,7 +105,7 @@ exports.authUser = async function (req, res, next) {
         if(ifAdmin.length > 0)
         {
             const token = jwt.sign({name:ifAdmin[0].nombre}, properties.appkey, {
-                expiresIn: "48h"
+                expiresIn: "2 days"
             });
 
             offices = await executeQuery(queries.get_actives_offices);
@@ -674,9 +674,92 @@ exports.testingImage2 = async function (req, res, next) {
 
 }
 
+exports.proccessImageAppointment = async function (req, res, next) { 
+
+
+    const { 
+        appointment,
+        type,
+        imageIndex,
+        pictureTimes, 
+        
+    } = req.body
+
+
+    let appointmentResult = await executeQuery(queries.get_appointment_info,[appointment]);
+
+    if(!appointmentResult[0])
+    {
+        console.log("siniester not exist",appointment)
+        res.status(400).send({"message":"siniester not exist for appointment "+appointment});
+        return
+    }
+
+    const siniester = appointmentResult[0].siniestro;
+
+    const plate = appointmentResult[0].placa;
+
+    const spanishType = type === "deliver" ? "Entrega" : "Devolucion";
+    
+    const now = moment().format("YYYY-MM-DD HH:mm:ss")
+
+    const fs = require("fs");
+    const dir = __dirname+"/files/app/"+type+"/"+appointment
+    
+    if (!fs.existsSync(dir)){        
+       await fs.mkdirSync(dir);
+    }
+
+
+    const frontImageSrcBitmap = new Buffer(frontImageSrc, 'base64');
+
+    fs.writeFileSync(dir+"/frontImage.jpeg", frontImageSrcBitmap);
+
+    await sleep(100)
+
+    const read = await new Promise((resolve, reject) => {
+         Jimp.read(dir+"/frontImage.jpeg", function (err, test) {
+            if (err) reject(err);
+            test.resize(1280, 960).quality(40).write(dir+"/frontImageResized.jpeg"); 
+            resolve(true)
+        });
+    })
+
+    //console.log("read",read)
+
+    if(read)
+    {
+        await sleep(150)
+
+        const dimensions = sizeOf(dir+"/frontImageResized.jpeg");
+
+        //pictureTimes.frontCameraImage ,  moment().format("YYYY-MM-DD HH:mm:ss")
+
+        let message =  `${spanishType} tomada: ${pictureTimes.frontCameraImage} Cargada: ${now} Placa: ${plate} Siniestro: ${siniester}`
+
+        await generateImageLabel(dir,message,"frontImageLabel",dimensions.width, 50)
+
+        await sleep(300)
+
+        await mergeImages([dir+"/frontImageResized.jpeg",dir+"/frontImageLabel.png"],dir,"frontImageLabeled")
+      
+
+        //await sleep(100)
+
+        //const base64str = base64_encode(dir+"/frontImageLabeled.png");
+
+        //console.log("base64str",base64str)
+    }
+
+   
+
+
+}
+
+
 exports.proccessAppointment = async function (req, res, next) { 
 
-    console.log("proccess appointment got it 3")
+    console.log("proccess image")
 
     //It can happened that was already proccessed
 
@@ -695,11 +778,6 @@ exports.proccessAppointment = async function (req, res, next) {
                 aditional1ImageSrc,
                 aditional2ImageSrc,
                 pictureTimes, 
-                kilometersRegistered,
-                deliveryKilometer,
-                devolutionState,
-                userN,
-                userId
         } = req.body
 
         //console.log("delivery in server",deliveryKilometer)
@@ -708,6 +786,7 @@ exports.proccessAppointment = async function (req, res, next) {
 
         if(!appointmentResult[0])
         {
+            console.log("siniester not exist",appointment)
             res.status(400).send({"message":"siniester not exist for appointment "+appointment});
             return
         }
@@ -1081,12 +1160,6 @@ exports.proccessAppointment = async function (req, res, next) {
             }
         }
         
-        readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment,  kilometersRegistered,
-            deliveryKilometer,
-            devolutionState,
-            userN,
-            userId
-        }))
 
         res.send({message:"ok"});
 
@@ -1095,6 +1168,40 @@ exports.proccessAppointment = async function (req, res, next) {
         next(err);
     }    
 
+}
+
+exports.sendToqueue = async function (req, res, next) { 
+
+    console.log("proccess appointment queue got it")
+
+    //It can happened that was already proccessed
+
+    try{
+        const { 
+            appointment,
+            type,
+            kilometersRegistered,
+            deliveryKilometer,
+            devolutionState,
+            userN,
+            userId
+        } = req.body
+    
+        readWriteClient.set("proccessImagesAppointment",JSON.stringify({ type, appointment,  kilometersRegistered,
+            deliveryKilometer,
+            devolutionState,
+            userN,
+            userId
+        }))
+
+        res.send({message:"ok"});
+        
+    }catch(err){
+        console.log("error",err)
+        next(err);
+    } 
+
+    
 }
 
 async function generateImageLabel(dir,message,name,width,height){
