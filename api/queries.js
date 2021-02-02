@@ -3,7 +3,9 @@ module.exports = {
     admin_auth: 'Select * from usuario_desarrollo where usuario = ? and clave = ? ',
     //inicio de sesion usuario 
     user_auth: `Select id, nombre, email, celular, oficina from operario where usuario = ? and clave = ? and inactivo = 0 `,
-    //obtener oficias activas
+    //obtener oficina por id
+    get_office_by_id: `SELECT id,nombre as name,ciudad as code FROM oficina where id = ?`,
+    //obtener oficinas activas
     get_actives_offices: `SELECT id,nombre as name,ciudad as code FROM oficina where activa = 1`,
     //obtener oficinas por sucursal
     get_offices_by_branch: `SELECT id,nombre as name,ciudad as code FROM oficina where sucursal = ? `,

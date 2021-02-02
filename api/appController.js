@@ -120,7 +120,15 @@ exports.authUser = async function (req, res, next) {
             if(ifUser.length > 0)
             {
 
-                offices = await executeQuery(queries.get_offices_by_branch,[ifUser[0].oficina]);            
+                offices = await executeQuery(queries.get_offices_by_branch,[ifUser[0].oficina]);        
+                
+                //console.log("offices",offices)
+
+                ownOffices = await executeQuery(queries.get_office_by_id,[ifUser[0].oficina]);  
+
+                //console.log("ownOffices",ownOffices)
+
+                offices.push(ownOffices[0])
 
                 const token = jwt.sign({name:ifUser[0].nombre}, properties.appkey, {
                     expiresIn: '8h'
