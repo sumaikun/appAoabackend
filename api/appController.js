@@ -694,7 +694,7 @@ exports.proccessImageAppointment = async function (req, res, next) {
     } = req.body
 
 
-    let appointmentResult = await executeQuery(queries.get_appointment_info,[appointment]);
+    let appointmentResult = await executeQuery(queries.get_siniester_info,[appointment]);
 
     if(!appointmentResult[0])
     {
@@ -703,9 +703,9 @@ exports.proccessImageAppointment = async function (req, res, next) {
         return
     }
 
-    const siniester = appointmentResult[0].siniestro;
+    const siniester = appointmentResult[0].numero;
 
-    const plate = appointmentResult[0].placa;
+    const plate = appointmentResult[0].placaSiniestro;
 
     const spanishType = type === "deliver" ? "Entrega" : "Devolucion";
     
