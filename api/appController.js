@@ -799,7 +799,7 @@ exports.proccessAppointment = async function (req, res, next) {
             return
         }
 
-        const siniester = appointmentResult[0].siniestro;
+        const siniester = appointmentResult[0].numero;
 
         const plate = appointmentResult[0].placa;
 
